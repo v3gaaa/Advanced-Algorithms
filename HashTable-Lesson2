@@ -1,0 +1,163 @@
+#include <iostream>
+#include <vector>
+#include <bitset>
+
+using namespace std;
+
+struct HashEntry {
+    string key;
+    string value;
+    bool occupied;
+
+    HashEntry() : key(""), value(""), occupied(false) {}
+};
+
+class HashTable {
+private:
+    vector<HashEntry> table;
+    int numEntries;
+    int bucketSize;
+
+    int hashFunction(const string &key) {
+        int asciiSum = 0;
+        int length = key.length(); 
+
+        for (char ch : key) {
+            asciiSum += static_cast<int>(ch);
+        }
+
+        int result = (asciiSum * 2) / length;
+
+        //Regresa un index dentro del rango
+        return result % bucketSize;
+    }
+
+    //Aumenta numero de buckets y rehashea si se excede el load factor
+    void rehash() {
+        vector<HashEntry> oldTable = table;
+        bucketSize *= 2;
+        table = vector<HashEntry>(bucketSize); 
+        numEntries = 0;
+
+        //For para rellenar la nueva tabla con los datos de la anterior pero rehasehados para este nuevo bucketSize
+        for (auto &entry : oldTable) {
+            if (entry.occupied) {
+                insert(entry.key, entry.value);
+            }
+        }
+    }
+
+public:
+
+    //constructor
+    HashTable(int size) : numEntries(0), bucketSize(size) {
+        table = vector<HashEntry>(bucketSize);
+    }
+
+    
+    void insert(const string &key, const string &value) {
+        int index = hashFunction(key);
+        while (table[index].occupied) {
+            index = (index + 1) % bucketSize; // Linear probing si esta lleno lo manda al otro disponible dentro del bucket size
+        }
+        table[index].key = key;
+        table[index].value = value;
+        table[index].occupied = true;
+        numEntries++;
+
+        // CHequeo del load factor
+        if ((float)numEntries / bucketSize > 0.80) {
+            rehash();
+        }
+    }
+
+
+    string search(const string &key) {
+        int index = hashFunction(key);
+
+            if (table[index].key == key) {
+                return table[index].value;
+            } else {
+                return "Key not found";
+            }
+    }
+
+    // Update the value associated with a key
+    void update(const string &key, const string &newValue) {
+        int index = hashFunction(key);
+  
+        if (table[index].key == key) {
+            table[index].key = "";
+            table[index].value = "";
+            table[index].occupied = false;
+            numEntries--;
+            // Insert the new value with the same key
+            insert(key, newValue);
+        } else {
+            cout << "Key not found" << endl;
+        }
+        
+        
+    }
+
+    // Delete a key-value pair
+    void remove(const string &key) {
+        int index = hashFunction(key);
+        
+            if (table[index].key == key) {
+                table[index].occupied = false;
+                table[index].key = "";
+                table[index].value = "";
+                numEntries--;
+                return;
+            } else {
+                cout << "Key not found" << endl;
+            }
+        
+    }
+
+    // Print the hash table (for debugging purposes)
+    void printTable() {
+        for (int i = 0; i < bucketSize; ++i) {
+            if (table[i].occupied) {
+                cout << "Index " << i << ": " << table[i].key << " -> " << table[i].value << endl;
+            } else {
+                cout << "Index " << i << ": Empty" << endl;
+            }
+        }
+    }
+};
+
+int main() {
+    HashTable ht(10);
+
+    ht.insert("apple", "fruit");
+    ht.insert("strawberry", "fruit");
+    ht.insert("tomato", "vegetable");
+    ht.insert("carrot", "vegetable");
+    ht.insert("banana", "fruit");
+    ht.insert("berry", "fruit");
+    ht.insert("lettuce", "vegetable");
+
+    cout << "First Table" << endl;
+    ht.printTable();
+
+    ht.insert("onion", "vegetable");
+
+    //Aqui se aumenta el numero de buckets debido a que se excedio el load factor
+    cout << "Second Table" << endl;
+    ht.printTable();
+
+    // Actualización del valor de 'apple'
+    ht.update("apple", "green fruit");
+    cout << "After updating 'apple' to 'green fruit':" << endl;
+    ht.printTable();
+
+    cout << "Searching for 'apple': " << ht.search("apple") << endl;
+    cout << "Searching for 'grape': " << ht.search("grape") << endl;
+
+    ht.remove("carrot");
+    ht.printTable();
+
+    return 0;
+}
