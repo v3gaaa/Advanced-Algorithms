@@ -1,0 +1,29 @@
+#include <iostream>
+#include <queue>
+#include <vector>
+
+using namespace std;
+
+int fibonacci(int n, vector<int> memo){
+  int result;
+  if(memo[n] != -1){
+    return memo[n];
+  }
+  if(n==1 || n==2){
+    return 1;
+  }else{
+    result = fibonacci(n-1,memo) + fibonacci(n-2, memo);
+  }
+  memo[n] = result;
+  return result;
+}
+
+int main() {
+
+  vector<int> memo(9, -1);
+  int n = 8;
+  int result = fibonacci(n, memo);
+  cout << result << endl;
+
+  return 0;
+}
